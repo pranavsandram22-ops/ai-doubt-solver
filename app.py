@@ -1,12 +1,18 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
-from audio_recorder_streamlit import audio_recorder
+
+# Optional microphone support
+try:
+    from audio_recorder_streamlit import audio_recorder
+    mic_available = True
+except:
+    mic_available = False
 
 # Configure Gemini API
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# Lightweight model
+# Load Gemini model
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # Logo
@@ -19,23 +25,25 @@ st.write("Ask any doubt using text, voice, or images.")
 # Text input
 question = st.text_input("❓ Enter your doubt")
 
-# Voice input
+# Voice Input
 st.subheader("🎤 Voice Input")
 
-audio_bytes = audio_recorder(
-    text="Click to record",
-    recording_color="#e74c3c",
-    neutral_color="#6aa36f",
-    icon_name="microphone",
-    icon_size="2x",
-)
+if mic_available:
 
-if audio_bytes:
-    st.success("✅ Voice recorded successfully!")
-    st.audio(audio_bytes, format="audio/wav")
-    st.info(
-        "Voice recording is available. Speech-to-text conversion can be added later."
+    audio_bytes = audio_recorder(
+        text="Click to record",
+        recording_color="#e74c3c",
+        neutral_color="#6aa36f",
+        icon_name="microphone",
+        icon_size="2x",
     )
+
+    if audio_bytes:
+        st.success("✅ Voice recorded successfully!")
+        st.audio(audio_bytes, format="audio/wav")
+
+else:
+    st.warning("🎤 Microphone unavailable.")
 
 # Image upload
 uploaded_file = st.file_uploader(
@@ -49,7 +57,7 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-# Button
+# Explain button
 if st.button("🚀 Explain"):
 
     if question.strip() == "" and image is None:
@@ -71,6 +79,7 @@ Use simple words and examples.
 User Question:
 {question}
                         """,
+
                         image
                     ]
                 )
@@ -92,5 +101,5 @@ Question:
         except Exception:
 
             st.error(
-                "⚠️ Too many requests or API limit reached.\n\nPlease wait a minute and try again."
+                "⚠️ Too many requests or API limit reached. Please wait a minute and try again."
             )
