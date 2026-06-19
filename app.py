@@ -66,10 +66,10 @@ def ask_ai(prompt):
     }
 
     MODELS = [
-        "meta-llama/llama-3.3-8b-instruct:free",
-        "google/gemma-3-12b-it:free",
-        "mistralai/mistral-7b-instruct:free"
-    ]
+    "qwen/qwen3-32b:free",
+    "deepseek/deepseek-r1-0528:free",
+    "moonshotai/kimi-k2:free"
+]
 
     for model_name in MODELS:
 
