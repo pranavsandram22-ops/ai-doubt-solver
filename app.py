@@ -87,10 +87,11 @@ def ask_ai(prompt):
             return response.choices[0].message.content
 
         except Exception as e:
-                st.error(f"{model_name} failed")
-                st.exception(e)
 
-return "All models failed."
+            st.error(f"{model_name} failed")
+            st.exception(e)
+
+    return "All models failed."
 
 # Explain button
 if st.button("🚀 Explain"):
