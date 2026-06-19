@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+import time
 
 # Optional microphone support
 try:
@@ -9,41 +10,45 @@ try:
 except:
     mic_available = False
 
-# Configure Gemini API
-genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-
-# Load Gemini model
-model = genai.GenerativeModel("gemini-1.5-flash")
+# API Keys
+API_KEYS = [
+    st.secrets["GEMINI_API_KEY1"],
+    st.secrets["GEMINI_API_KEY2"],
+    st.secrets["GEMINI_API_KEY3"]
+]
 
 # Logo
 st.image("logo.png", width=150)
 
 # Title
 st.title("🤖 AI Doubt Solver")
-st.write("Ask any doubt using text, voice, or images.")
+st.write("Ask doubts using text, voice, or images.")
+
+# Cooldown
+if "last_request" not in st.session_state:
+    st.session_state.last_request = 0
 
 # Text input
 question = st.text_input("❓ Enter your doubt")
 
-# Voice Input
+# Microphone
 st.subheader("🎤 Voice Input")
 
 if mic_available:
-
     audio_bytes = audio_recorder(
         text="Click to record",
         recording_color="#e74c3c",
         neutral_color="#6aa36f",
         icon_name="microphone",
-        icon_size="2x",
+        icon_size="2x"
     )
 
     if audio_bytes:
-        st.success("✅ Voice recorded successfully!")
+        st.success("Voice recorded!")
         st.audio(audio_bytes, format="audio/wav")
 
 else:
-    st.warning("🎤 Microphone unavailable.")
+    st.warning("Microphone unavailable.")
 
 # Image upload
 uploaded_file = st.file_uploader(
@@ -57,49 +62,70 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-# Explain button
+
+def ask_gemini(prompt, image=None):
+
+    for key in API_KEYS:
+
+        try:
+            genai.configure(api_key=key)
+            model = genai.GenerativeModel("gemini-1.5-flash-8b")
+
+            if image is not None:
+                response = model.generate_content([prompt, image])
+            else:
+                response = model.generate_content(prompt)
+
+            return response.text
+
+        except:
+            continue
+
+    return "⚠️ All API keys are busy. Please try again later."
+
+
+# Button
 if st.button("🚀 Explain"):
 
-    if question.strip() == "" and image is None:
-        st.warning("Please enter a question or upload an image.")
+    current_time = time.time()
+
+    if current_time - st.session_state.last_request < 10:
+        st.warning("⏳ Please wait 10 seconds before asking another doubt.")
 
     else:
 
-        try:
+        st.session_state.last_request = current_time
 
-            if image is not None:
+        if question.strip() == "" and image is None:
+            st.warning("Please enter a question or upload an image.")
 
-                response = model.generate_content(
-                    [
+        else:
+
+            with st.spinner("Thinking..."):
+
+                if image is not None:
+
+                    answer = ask_gemini(
                         f"""
 Explain this image clearly.
-Give step-by-step explanation.
 Use simple words and examples.
 
-User Question:
+Question:
 {question}
-                        """,
-
+""",
                         image
-                    ]
-                )
+                    )
 
-            else:
+                else:
 
-                response = model.generate_content(
-                    f"""
+                    answer = ask_gemini(
+                        f"""
 Explain the following doubt in simple words with examples.
 
 Question:
 {question}
-                    """
-                )
+"""
+                    )
 
             st.subheader("✅ Answer")
-            st.write(response.text)
-
-        except Exception:
-
-            st.error(
-                "⚠️ Too many requests or API limit reached. Please wait a minute and try again."
-            )
+            st.write(answer)
