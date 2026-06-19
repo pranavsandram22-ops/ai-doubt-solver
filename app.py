@@ -65,7 +65,7 @@ if uploaded_file is not None:
 
 def ask_gemini(prompt, image=None):
 
-    for key in API_KEYS:
+    for i, key in enumerate(API_KEYS):
 
         try:
             genai.configure(api_key=key)
@@ -78,10 +78,11 @@ def ask_gemini(prompt, image=None):
 
             return response.text
 
-        except:
-            continue
+        except Exception as e:
+            st.error(f"Key {i+1} failed:")
+            st.exception(e)
 
-    return "⚠️ All API keys are busy. Please try again later."
+    return "All API keys are busy."
 
 
 # Button
