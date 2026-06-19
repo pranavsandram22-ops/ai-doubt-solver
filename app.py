@@ -1,4 +1,4 @@
-import streamlit as st
+iimport streamlit as st
 import google.generativeai as genai
 from PIL import Image
 import time
@@ -69,7 +69,7 @@ def ask_gemini(prompt, image=None):
 
         try:
             genai.configure(api_key=key)
-            model = genai.GenerativeModel("gemini-1.5-flash-8b")
+            model = genai.GenerativeModel("gemini-1.5-flash")
 
             if image is not None:
                 response = model.generate_content([prompt, image])
