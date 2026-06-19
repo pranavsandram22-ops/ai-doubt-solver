@@ -69,7 +69,7 @@ def ask_gemini(prompt, image=None):
 
         try:
             genai.configure(api_key=key)
-            model = genai.GenerativeModel("model = genai.GenerativeModel("gemini-2.0-flash")")
+            model = genai.GenerativeModel("gemini-2.0-flash")
 
             if image is not None:
                 response = model.generate_content([prompt, image])
