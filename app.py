@@ -66,28 +66,46 @@ def ask_ai(prompt):
         "Content-Type": "application/json"
     }
 
-    data = {
-        "model": "deepseek/deepseek-chat-v3-0324:free",
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt
+    MODELS = [
+        "meta-llama/llama-3.3-8b-instruct:free",
+        "google/gemma-3-12b-it:free",
+        "mistralai/mistral-7b-instruct:free"
+    ]
+
+    for model_name in MODELS:
+
+        try:
+
+            data = {
+                "model": model_name,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": "You are an AI tutor. Explain things simply with examples."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
             }
-        ]
-    }
 
-    response = requests.post(
-        "https://openrouter.ai/api/v1/chat/completions",
-        headers=headers,
-        json=data
-    )
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data,
+                timeout=60
+            )
 
-    result = response.json()
+            result = response.json()
 
-    if "choices" in result:
-        return result["choices"][0]["message"]["content"]
-    else:
-        return str(result)
+            if "choices" in result:
+                return result["choices"][0]["message"]["content"]
+
+        except:
+            continue
+
+    return "⚠️ All free AI models are currently busy. Please try again later."
 
 
 # Button
