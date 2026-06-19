@@ -1,5 +1,5 @@
 import streamlit as st
-import requests
+from groq import Groq
 from PIL import Image
 import time
 
@@ -10,8 +10,8 @@ try:
 except:
     mic_available = False
 
-# OpenRouter API Key
-OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
+# Groq client
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 # Logo
 st.image("logo.png", width=150)
@@ -27,7 +27,7 @@ if "last_request" not in st.session_state:
 # Text input
 question = st.text_input("❓ Enter your doubt")
 
-# Microphone
+# Voice input
 st.subheader("🎤 Voice Input")
 
 if mic_available:
@@ -42,7 +42,6 @@ if mic_available:
     if audio_bytes:
         st.success("Voice recorded!")
         st.audio(audio_bytes, format="audio/wav")
-
 else:
     st.warning("Microphone unavailable.")
 
@@ -58,54 +57,42 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
+
+# AI function
 def ask_ai(prompt):
 
-    headers = {
-        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
     MODELS = [
-    "qwen/qwen3-32b:free",
-    "deepseek/deepseek-r1-0528:free",
-    "moonshotai/kimi-k2:free"
-]
+        "llama-3.3-70b-versatile",
+        "llama-3.1-8b-instant"
+    ]
 
     for model_name in MODELS:
 
-        data = {
-            "model": model_name,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        }
-
         try:
 
-            response = requests.post(
-                "https://openrouter.ai/api/v1/chat/completions",
-                headers=headers,
-                json=data
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are an AI tutor. Explain things simply with examples."
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ]
             )
 
-            result = response.json()
+            return response.choices[0].message.content
 
-            st.write("Model:", model_name)
-            st.write(result)
+        except Exception:
+            continue
 
-            if "choices" in result:
-                return result["choices"][0]["message"]["content"]
-
-        except Exception as e:
-            st.error(e)
-
-    return "All models failed."
+    return "⚠️ All AI models are busy. Please try again later."
 
 
-# Button
+# Explain button
 if st.button("🚀 Explain"):
 
     current_time = time.time()
