@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+import requests
 from PIL import Image
 import time
 
@@ -10,12 +10,8 @@ try:
 except:
     mic_available = False
 
-# API Keys
-API_KEYS = [
-    st.secrets["GEMINI_API_KEY1"],
-    st.secrets["GEMINI_API_KEY2"],
-    st.secrets["GEMINI_API_KEY3"]
-]
+# OpenRouter API Key
+OPENROUTER_API_KEY = st.secrets["OPENROUTER_API_KEY"]
 
 # Logo
 st.image("logo.png", width=150)
@@ -63,26 +59,35 @@ if uploaded_file is not None:
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
 
-def ask_gemini(prompt, image=None):
+def ask_ai(prompt):
 
-    for i, key in enumerate(API_KEYS):
+    headers = {
+        "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+        "Content-Type": "application/json"
+    }
 
-        try:
-            genai.configure(api_key=key)
-            model = genai.GenerativeModel("gemini-2.0-flash")
+    data = {
+        "model": "deepseek/deepseek-chat-v3-0324:free",
+        "messages": [
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    }
 
-            if image is not None:
-                response = model.generate_content([prompt, image])
-            else:
-                response = model.generate_content(prompt)
+    response = requests.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers=headers,
+        json=data
+    )
 
-            return response.text
+    result = response.json()
 
-        except Exception as e:
-            st.error(f"Key {i+1} failed:")
-            st.exception(e)
-
-    return "All API keys are busy."
+    if "choices" in result:
+        return result["choices"][0]["message"]["content"]
+    else:
+        return str(result)
 
 
 # Button
@@ -106,20 +111,19 @@ if st.button("🚀 Explain"):
 
                 if image is not None:
 
-                    answer = ask_gemini(
+                    answer = ask_ai(
                         f"""
 Explain this image clearly.
 Use simple words and examples.
 
 Question:
 {question}
-""",
-                        image
+"""
                     )
 
                 else:
 
-                    answer = ask_gemini(
+                    answer = ask_ai(
                         f"""
 Explain the following doubt in simple words with examples.
 
