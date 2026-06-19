@@ -58,7 +58,6 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
-
 def ask_ai(prompt):
 
     headers = {
@@ -74,38 +73,36 @@ def ask_ai(prompt):
 
     for model_name in MODELS:
 
-        try:
+        data = {
+            "model": model_name,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
 
-            data = {
-                "model": model_name,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content": "You are an AI tutor. Explain things simply with examples."
-                    },
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ]
-            }
+        try:
 
             response = requests.post(
                 "https://openrouter.ai/api/v1/chat/completions",
                 headers=headers,
-                json=data,
-                timeout=60
+                json=data
             )
 
             result = response.json()
 
+            st.write("Model:", model_name)
+            st.write(result)
+
             if "choices" in result:
                 return result["choices"][0]["message"]["content"]
 
-        except:
-            continue
+        except Exception as e:
+            st.error(e)
 
-    return "⚠️ All free AI models are currently busy. Please try again later."
+    return "All models failed."
 
 
 # Button
