@@ -1,2 +1,6 @@
 streamlit
 google-generativeai
+Pillow
+streamlit-audiorecorder
+SpeechRecognition
+pydub

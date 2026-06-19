@@ -1,45 +1,96 @@
 import streamlit as st
 import google.generativeai as genai
 from PIL import Image
+from audio_recorder_streamlit import audio_recorder
 
 # Configure Gemini API
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 
-# Load Gemini model
-model = genai.GenerativeModel("gemini-2.5-flash")
+# Lightweight model
+model = genai.GenerativeModel("gemini-1.5-flash")
 
-# App Title
+# Logo
+st.image("logo.png", width=150)
+
+# Title
 st.title("🤖 AI Doubt Solver")
+st.write("Ask any doubt using text, voice, or images.")
 
-# Text Input
-question = st.text_input("Enter your doubt or ask about an image:")
+# Text input
+question = st.text_input("❓ Enter your doubt")
 
-# Image Upload
+# Voice input
+st.subheader("🎤 Voice Input")
+
+audio_bytes = audio_recorder(
+    text="Click to record",
+    recording_color="#e74c3c",
+    neutral_color="#6aa36f",
+    icon_name="microphone",
+    icon_size="2x",
+)
+
+if audio_bytes:
+    st.success("✅ Voice recorded successfully!")
+    st.audio(audio_bytes, format="audio/wav")
+    st.info(
+        "Voice recording is available. Speech-to-text conversion can be added later."
+    )
+
+# Image upload
 uploaded_file = st.file_uploader(
-    "Upload an image (optional)",
+    "📷 Upload an image (optional)",
     type=["jpg", "jpeg", "png"]
 )
 
-# Display uploaded image
 image = None
+
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", use_container_width=True)
 
 # Button
-if st.button("Explain"):
+if st.button("🚀 Explain"):
 
-    # If image uploaded
-    if image is not None:
-        response = model.generate_content(
-            [question, image]
-        )
+    if question.strip() == "" and image is None:
+        st.warning("Please enter a question or upload an image.")
 
-    # Text-only question
     else:
-        response = model.generate_content(
-            f"Explain this topic in simple words with examples: {question}"
-        )
 
-    st.write("### Answer:")
-    st.write(response.text)
+        try:
+
+            if image is not None:
+
+                response = model.generate_content(
+                    [
+                        f"""
+Explain this image clearly.
+Give step-by-step explanation.
+Use simple words and examples.
+
+User Question:
+{question}
+                        """,
+                        image
+                    ]
+                )
+
+            else:
+
+                response = model.generate_content(
+                    f"""
+Explain the following doubt in simple words with examples.
+
+Question:
+{question}
+                    """
+                )
+
+            st.subheader("✅ Answer")
+            st.write(response.text)
+
+        except Exception:
+
+            st.error(
+                "⚠️ Too many requests or API limit reached.\n\nPlease wait a minute and try again."
+            )
