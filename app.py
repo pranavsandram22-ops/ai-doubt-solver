@@ -2,6 +2,9 @@ import streamlit as st
 from groq import Groq
 from PIL import Image
 import time
+import speech_recognition as sr
+from pydub import AudioSegment
+import io
 
 # Optional microphone support
 try:
@@ -28,6 +31,7 @@ if "last_request" not in st.session_state:
 question = st.text_input("❓ Enter your doubt")
 
 # Voice input
+# Voice input
 st.subheader("🎤 Voice Input")
 
 if mic_available:
@@ -40,11 +44,36 @@ if mic_available:
     )
 
     if audio_bytes:
+
         st.success("Voice recorded!")
         st.audio(audio_bytes, format="audio/wav")
+
+        try:
+
+            audio = AudioSegment.from_file(
+                io.BytesIO(audio_bytes),
+                format="wav"
+            )
+
+            audio.export("temp.wav", format="wav")
+
+            recognizer = sr.Recognizer()
+
+            with sr.AudioFile("temp.wav") as source:
+                audio_data = recognizer.record(source)
+
+            question = recognizer.recognize_google(audio_data)
+
+            st.success("🎤 You said:")
+            st.write(question)
+
+        except Exception as e:
+            st.error("Could not recognize speech.")
+            st.exception(e)
+
 else:
     st.warning("Microphone unavailable.")
-
+    
 # Image upload
 uploaded_file = st.file_uploader(
     "📷 Upload an image (optional)",
